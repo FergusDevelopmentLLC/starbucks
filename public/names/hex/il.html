@@ -1,0 +1,375 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Names</title>
+
+    <link href="http://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" type="text/css">
+    <style>
+        body {
+          padding: 0;
+          margin: 0;
+          background: #E8E8E8;
+          font-family: Montserrat, sans-serif;
+        }
+
+        h1, h2, h3 {
+          font-size: 1.3em;
+          font-weight: 100;
+          color: #808080;
+          margin: 0;
+          margin-bottom: 3px;
+        }
+
+        h2 {
+          font-size: 1em;
+          margin-bottom: 3px;
+        }
+
+        h3 {
+          font-size: .65em;
+          margin-bottom: 10px;
+        }
+
+        h3 a {
+          color: #808080;
+        }
+
+        #map {
+          width: 900px;
+          height: 600px;
+          margin-left: 0px;
+          margin-top: 0px;
+          margin-bottom: 5px;
+        }
+
+        .drought_area {
+          stroke: 'none';
+        }
+
+        .slider {
+          width: 200px;
+        }
+
+        #title {
+          position: absolute;
+          top: 10px;
+          left: 20px;
+          display: none;
+        }
+
+        #slider-wrapper {
+          position: absolute;
+          color: #808080;
+          padding: 0px;
+          margin: 0px;
+          top: 420px;
+          left: 420px;
+          display: none;
+        }
+
+        #slider-wrapper div {
+          text-align: center;
+          font-size: .95em;
+        }
+
+        #slider-wrapper input {
+          width:150px;
+        }
+
+        #legend-wrapper {
+          position: absolute;
+          display: none;
+          top: 200px;
+          left: 450px;
+        }
+
+        table {
+          border-collapse: collapse;
+        }
+
+        td {
+          border-color: #000;
+          font-size: .65em;
+        }
+
+        tr td:first-child {
+          width: 10px;
+          border: 1px solid #E8E8E8;
+        }
+
+        tr td:last-child {
+          padding-left: 5px;
+          color: #808080;
+        }
+
+        input[type=range] {
+          height: 25px;
+          -webkit-appearance: none;
+          margin: 0px 0;
+          width: 100%;
+          background-color: #E8E8E8;
+        }
+
+        input[type=range]:focus {
+          outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 5px;
+          cursor: pointer;
+          animate: 0.2s;
+          box-shadow: 0px 0px 0px #000000;
+          background: #B8B8B8;
+          border-radius: 1px;
+          border: 0px solid #000000;
+        }
+        input[type=range]::-webkit-slider-thumb {
+          box-shadow: 0px 0px 0px #000000;
+          border: 1px solid #B3B3B3;
+          height: 18px;
+          width: 18px;
+          border-radius: 25px;
+          background: #FFFFFF;
+          cursor: pointer;
+          -webkit-appearance: none;
+          margin-top: -7px;
+        }
+        input[type=range]:focus::-webkit-slider-runnable-track {
+          background: #B8B8B8;
+        }
+        input[type=range]::-moz-range-track {
+          width: 100%;
+          height: 5px;
+          cursor: pointer;
+          animate: 0.2s;
+          box-shadow: 0px 0px 0px #000000;
+          background: #B8B8B8;
+          border-radius: 1px;
+          border: 0px solid #000000;
+        }
+        input[type=range]::-moz-range-thumb {
+          box-shadow: 0px 0px 0px #000000;
+          border: 1px solid #B3B3B3;
+          height: 18px;
+          width: 18px;
+          border-radius: 25px;
+          background: #FFFFFF;
+          cursor: pointer;
+        }
+        input[type=range]::-ms-track {
+          width: 100%;
+          height: 5px;
+          cursor: pointer;
+          animate: 0.2s;
+          background: transparent;
+          border-color: transparent;
+          color: transparent;
+        }
+        input[type=range]::-ms-fill-lower {
+          background: #B8B8B8;
+          border: 0px solid #000000;
+          border-radius: 2px;
+          box-shadow: 0px 0px 0px #000000;
+        }
+        input[type=range]::-ms-fill-upper {
+          background: #B8B8B8;
+          border: 0px solid #000000;
+          border-radius: 2px;
+          box-shadow: 0px 0px 0px #000000;
+        }
+        input[type=range]::-ms-thumb {
+          margin-top: 1px;
+          box-shadow: 0px 0px 0px #000000;
+          border: 1px solid #B3B3B3;
+          height: 18px;
+          width: 18px;
+          border-radius: 25px;
+          background: #FFFFFF;
+          cursor: pointer;
+        }
+        input[type=range]:focus::-ms-fill-lower {
+          background: #B8B8B8;
+        }
+        input[type=range]:focus::-ms-fill-upper {
+          background: #B8B8B8;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div id="title">
+  <h1>Illinois</h1>
+  <h3>Source: <a href='#'>Names database</a></h3>
+</div>
+
+<div id='slider-wrapper'>
+  <div>
+    <div id="date">Number of names</div>
+    <input type="range" class="slider">
+    <br/>
+    1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10
+  </div>
+</div>
+
+<div id='legend-wrapper'>
+  << 1910 >>
+  <br/>
+  <br/>
+  <table>
+    <tr>
+      <td style="background-color:#c2a9e8">&nbsp;</td>
+      <td>Mary 15%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#c05f98'>&nbsp;</td>
+      <td>John 10%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#6d1a50'>&nbsp;</td>
+      <td>Helen 8%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#87cf58'>&nbsp;</td>
+      <td>James 8%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#dedab7'>&nbsp;</td>
+      <td>William 5%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#43bcc9'>&nbsp;</td>
+      <td>Margaret 5%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#39966d'>&nbsp;</td>
+      <td>Dorothy 5%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#a95d27'>&nbsp;</td>
+      <td>Ruth 3%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#a50f15'>&nbsp;</td>
+      <td>Anna 2%</td>
+    </tr>
+    <tr>
+      <td style='background-color:#a50f15'>&nbsp;</td>
+      <td>Elizabet 1%</td>
+    </tr>
+  </table>
+</div>
+
+<div id="map"></div>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-queue.v3.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<script src="https://momentjs.com/downloads/moment.min.js"></script>
+
+<script>
+
+  var width = 900,height = 600;
+
+  var svg = d3.select( "#map" )
+    .append( "svg" )
+    .attr( "width",width )
+    .attr( "height",height );
+
+  // var projection = d3.geoAlbersUsa()
+  //   .scale(5000)
+  //   .translate([width / 2 + 35,height / 2 + 15]);
+
+  var geoPath = d3.geoPath()
+    .projection(d3.geoTransverseMercator()
+      .rotate([88 + 20 / 60, -36 - 40 / 60])
+      .translate([300, 625])
+      .scale(5500));
+
+  d3.queue()
+    .defer(d3.json,'data/hex_il_v2.geojson')
+    .defer(d3.json,'data/names_by_year.json')
+    .await(makeMap);
+
+  function makeMap(error, hex, names_by_year) {
+
+    var year = 1910;
+    var colors = ["#c2a9e8","#c05f98","#6d1a50","#87cf58","#dedab7","#43bcc9","#39966d","#a95d27","#fd813b","#40a9fb","#f975ea","#8de891","#6f00f1","#032ac8","#aa8441","#44ae19","#f96277","#63f4ff","#2e4299","#d93350","#f2cc91"];
+    var names_array = [];
+
+    update(year, hex, names_by_year);
+
+    var min = 1910;
+    var max = 2017;
+
+    d3.select(".slider")
+      .attr("min",min)
+      .attr("max",max)
+      .attr("value",min)
+      .attr("step", 1)
+      .on("input",function() {
+        console.log('here');
+        update(this.value, hex, names_by_year);
+      });
+
+    d3.select("#title")
+      .style("display","block");
+
+    d3.select("#slider-wrapper")
+      .style("display","block");
+
+    d3.select("#legend-wrapper")
+      .style("display","block");
+
+    function update (year, hex, names_by_year) {
+
+      var filtered_by_year = names_by_year.filter(function(d) { return d.year == year; });
+
+      names_array = [];
+      filtered_by_year.forEach(function(d) {
+        names_array.push(d.name);
+      });
+
+      console.log(names_array);
+
+      var total_occurrences = 0;
+      filtered_by_year.forEach(function(d) {
+        total_occurrences += parseInt(d.total);
+      });
+
+      var thresh = 0;
+      filtered_by_year.forEach(function(d) {
+        d.perc = parseFloat(d.total/total_occurrences);
+        var lastthresh = thresh;
+        thresh += parseInt(hex.features.length * d.perc);
+        var name = d.name;
+        //console.log(name);
+        //console.log(thresh);
+        hex.features.forEach(function(d) {
+          if(d.properties.st_index <= thresh && d.properties.st_index > lastthresh) {
+            d.properties.name = name;
+          }
+        });
+      });
+
+      svg.append("g")
+        .selectAll("path")
+        .data(hex.features)
+        .enter()
+        .append("path")
+        .attr("d",geoPath)
+        .attr("fill",function(d) {
+          return colors[names_array.indexOf(d.properties.name)];
+        })
+        .attr("stroke",function(d) {
+          return colors[names_array.indexOf(d.properties.name)];
+        })
+        .attr("stroke-width", 1);
+    }
+
+  };
+
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+node_modules/
+public/names/names_data/
+public/starbucks/starbucks_data/
+knexfile.js
+*.lock

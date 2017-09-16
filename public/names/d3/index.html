@@ -1,0 +1,735 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Names</title>
+    <link href="http://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Arimo" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Overpass+Mono" rel="stylesheet">
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/slider.css">
+    <link rel="stylesheet" type="text/css" href="css/switch-field.css">
+
+    <script src="js/utils.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/d3-queue.v3.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <script src="https://momentjs.com/downloads/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.24.0/d3-legend.min.js"></script>
+    <script src="http://colorbrewer2.org/export/colorbrewer.js"></script>
+    <script src="https://unpkg.com/simple-statistics@4.1.0/dist/simple-statistics.min.js"></script>
+
+    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script> -->
+
+    <style>
+
+        body {
+          padding: 0;
+          margin: 0;
+          background: #E8E8E8;
+          font-family: Montserrat, sans-serif;
+        }
+
+        h1, h2, h3 {
+          font-size: 1.3em;
+          font-weight: 100;
+          color: #808080;
+          margin: 0;
+          margin-bottom: 3px;
+        }
+
+        h2 {
+          font-size: 1em;
+          margin-bottom: 3px;
+        }
+
+        h3 {
+          font-size: .65em;
+          margin-bottom: 10px;
+        }
+
+        h3 a {
+          color: #808080;
+        }
+
+        #map {
+          width: 900px;
+          height: 600px;
+          margin-left: 0px;
+          margin-top: 0px;
+          margin-bottom: 5px;
+        }
+
+        .state {
+          stroke: #696969;
+          stroke-width: 1;
+        }
+
+        .legend-linear {
+          fill: #696969;
+          font-size: .7em;
+        }
+
+        #min-year {
+          float: left;
+        }
+
+        #max-year {
+          float: right;
+        }
+
+        div.tooltip {
+          position: absolute;
+          max-width: 300px;
+          padding: 3px 6px;
+          color: grey;
+          font-family: 'Overpass Mono', monospace;
+          font-size: .7em;
+          background: whitesmoke;
+          border: 1px solid grey;
+          border-radius: 3px;
+          pointer-events: none;
+        }
+
+        .legend-text {
+          fill: #000000;
+          text-anchor: middle;
+          font-family: 'Arimo', sans-serif;
+        }
+
+        .legend-title {
+          font-size: 1.4em;
+          font-weight: bold;
+        }
+
+        .legend-subtitle {
+          font-size: 1.3em;
+        }
+
+        .legend-subsubtitle {
+          font-size: 1.1em;
+        }
+
+        .label {
+          fill: #000000;
+          font-family: 'Overpass Mono', monospace;
+        }
+
+        .swatch {
+          stroke: #696969;
+          stroke-width:.3;
+        }
+
+        .icon {
+          fill: #696969;
+        }
+
+        .legend-rect {
+          fill: #ffffff;
+          fill-opacity: .75;
+          stroke-width: .3;
+          stroke: #696969;
+          rx: 5;
+          ry: 5;
+        }
+
+        #pop_name {
+          position: absolute;
+          width: 128px;
+          height: 20px;
+          top:300px;
+          left:735px;
+          font-size: 1em;
+          font-weight: bold;
+          text-align: center;
+          display: none;
+        }
+
+        #background {
+          fill: #E8E8E8;
+          stroke: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id='slider-wrapper'>
+  <div id="slider-div"></div>
+  <div>
+    <div id="min-year"></div>
+    <div id="max-year"></div>
+  </div>
+</div>
+
+<div id="pop_name" contentEditable="true"></div>
+
+<div class="switch-field" id="switch-field">
+  <input type="radio" id="switch_left" name="switch_mf" value="M" checked/>
+  <label for="switch_left">Male</label>
+  <input type="radio" id="switch_right" name="switch_mf" value="F" />
+  <label for="switch_right">Female</label>
+</div>
+
+<script>
+
+  var width = 900,
+      height = 500,
+      default_popular_name = 'Quinn',
+      default_sex = 'M',
+      number_of_breaks = 5,
+      the_year = 1910,
+      min_year = 1910,
+      max_year = 2016,
+      most_popular_year = the_year,
+      breaks = [],
+      occurrences = '',
+      colorbrewer_key = 'Greens';
+      novaluecolor = '#ffffff',
+      total_occurrences_all_time = 0,
+      total_occurrences_for_year = 0,
+      tooltip = '';
+
+  var svg = d3.select("#map")
+    .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+  var geoPath = d3.geoPath()
+    .projection(d3.geoAlbersUsa()
+      .scale(1000)
+      .translate([width / 2, height / 2]));
+
+  tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+  popular_name = getNameFromQS();
+
+  sex = getSexFromQS();
+
+  if(popular_name == default_popular_name && sex == default_sex) {
+    //get a random name, if none passed.
+    d3.queue()
+      .defer(d3.json, "/popular_name/getRandomName")
+      .await(setName);
+  }
+
+  function setName(error, random_name_data) {
+    sex = random_name_data[0].sex;
+    popular_name = random_name_data[0].name;
+    init();
+  }
+
+  function init() {
+
+    handleCustomNameInput();
+
+    setMaleFemaleSwitch();
+
+    sex = d3.select('input[name="switch_mf"]:checked').node().value;
+
+    popular_name = toCamelCase(popular_name);
+
+    d3.select("#pop_name").html(popular_name);
+
+    var data_url = '/popular_name/d/' + popular_name + '/' + sex;
+
+    console.log(data_url);
+
+    d3.queue()
+      .defer(d3.json, 'data/states.topojson')
+      .defer(d3.json, data_url)
+      .await(makeMap);
+
+  }
+
+  function makeMap(error, statestopo, name_data) {
+
+    occurrences = name_data;
+
+    for (occurrence in occurrences) {
+      var dt = "12/31/" + occurrences[occurrence].yr;
+      occurrences[occurrence].date = new Date(dt);
+    }
+
+    joinDataToGeom(statestopo, name_data);
+
+    populateMaxMinYear();
+
+    populateBreaks(number_of_breaks, statestopo);
+
+    d3.select('#background').remove();
+
+    svg.append("rect")
+      .attr("id", "background")
+      .attr("width", "900px")
+      .attr("height", "500px")
+      .attr("transform", "translate(0,0)")
+      .on("mouseover",function(d) {
+        tooltip.style("opacity", 0);//TODO, figure a better tooltip
+      });
+
+    d3.select('#states').remove();
+
+    svg.append("g")
+      .attr("transform","translate(-20,-20)")
+      .attr("id","states")
+      .selectAll("path")
+      .data( topojson.feature(statestopo, statestopo.objects.states).features )
+      .enter()
+      .append("path")
+      .attr("d",geoPath)
+      .attr("class", "state")
+      .on("mouseover",function(d) {
+
+        var tooltip_msg = getTooltipMessage(d);
+
+        tooltip.transition()
+          .style("opacity", .9);
+
+        tooltip.html(tooltip_msg)
+          .style("left", (d3.event.pageX + 15) + "px")
+          .style("top", (d3.event.pageY - 28) + "px");
+
+        d3.select(this).style("stroke", "#FF0000");//make st outline red
+        d3.select(this).style("stroke-width", "1.2");
+
+        //https://stackoverflow.com/questions/17917072/choropleth-maps-changing-stroke-color-in-mouseover-shows-overlapping-boundari
+        this.parentNode.appendChild(this);//append it to parent to make it move to top, otherwise outline is covered by bordering state lines
+
+      })
+      .on("mouseout",function(d) {
+
+        d3.select(this).style("stroke", "#696969");//return st outline to gray
+        d3.select(this).style("stroke-width", "1");
+
+        tooltip.style("opacity", 0);
+
+      });
+
+    setMostPopularYear();
+
+    the_year = most_popular_year;
+
+    //remove any previous slider
+    d3.select('#slider').remove();
+
+    //add a new one back according to this name
+    d3.select('#slider-div').append('input')
+      .attr("type", "range")
+      .attr("id", "slider")
+      .attr("class", "slider")
+      .attr("min", min_year)
+      .attr("max", max_year)
+      .attr("value", the_year)
+      .attr("step", 1)
+      .on("input",function() {
+        tooltip.style("opacity", 0);//TODO, figure a better tooltip
+        the_year = this.value;
+        updateMap();
+      });
+
+    d3.select("#pop_name").style("display","block");
+    d3.select("#slider-wrapper").style("display","block");
+    d3.select("#switch-field").style("display","block");
+
+    addLegend();
+
+    updateMap();
+
+  };
+
+  function updateMap() {
+
+    //d3.select("#date").html(the_year);
+
+    total_occurrences_for_year = 0;
+    total_occurrences_all_time = 0;
+
+    svg.selectAll(".state")
+      .style('fill', function(d) {
+        var fill = novaluecolor;
+        if (d.properties.occurrences.length > 0) {
+          for (var occurrence in d.properties.occurrences) {
+            var occurrence_date = new Date(d.properties.occurrences[occurrence].date);
+            if(occurrence_date.getFullYear() == the_year && d.properties.occurrences[occurrence].oc > 0) {
+              total_occurrences_for_year += d.properties.occurrences[occurrence].oc;
+              var this_fill = getColor(d.properties.occurrences[occurrence].oc, breaks);
+              fill = this_fill;
+            }
+            if(occurrence_date.getFullYear() <= the_year) {
+              total_occurrences_all_time += d.properties.occurrences[occurrence].oc;
+            }
+          }
+          var subtitle_text = total_occurrences_for_year.toLocaleString() + " births in " + the_year;
+          if(the_year == most_popular_year) {
+            subtitle_text = total_occurrences_for_year.toLocaleString() + " births in *" + the_year + "*";
+          }
+          d3.select(".legend-subtitle").text(subtitle_text);
+        }
+        d3.select(".legend-subsubtitle").text(total_occurrences_all_time.toLocaleString() + " births since " + min_year);
+        return fill;
+      });
+
+    document.getElementById("pop_name").blur();
+
+    // $('#slider').val(most_popular_year);
+    // $("input[type='range']").slider( "refresh" );
+
+    // $('#slider').val(most_popular_year);
+    // $('#slider').slider('refresh');
+
+    //d3.select('#slider').property("value", most_popular_year);
+    // document.getElementById("slider").value = most_popular_year;
+    // document.getElementById("slider").fireEvent("onchange");
+
+
+  }
+
+  function joinDataToGeom(states, name_data) {
+    states.objects.states.geometries.forEach(function(d) {
+      var layer_stusps = d.properties.stusps;
+      d.properties.occurrences = [];
+      var i = 0;
+      for (var occurrence in occurrences) {
+        if(layer_stusps == occurrences[occurrence].st) {
+          d.properties.occurrences[i] = occurrences[occurrence];
+          i++;
+        }
+      }
+    });
+  }
+
+  function populateMaxMinYear() {
+
+    var first_date = new Date(occurrences[0].date);
+    var last_date = new Date(occurrences[occurrences.length-1].date);
+
+    min_year = first_date.getFullYear();
+    max_year = last_date.getFullYear();
+    the_year = min_year;
+
+    d3.select("#min-year").html(min_year);
+    d3.select("#max-year").html(max_year);
+
+  }
+
+  function setMostPopularYear() {
+
+    var year_accumulations = [];
+    var last_yr = occurrences[0].yr;
+    var year_accum = 0;
+
+    for(var oc in occurrences) {
+      if(occurrences[oc].yr == last_yr) {
+        year_accum += occurrences[oc].oc;
+      }
+      else {
+        year_accumulations.push([last_yr, year_accum]);
+        year_accum = occurrences[oc].oc;
+        last_yr = occurrences[oc].yr;
+      }
+    }
+
+    var most_pop_year = year_accumulations[0][0];
+    var most_pop_acc = year_accumulations[0][1];
+
+    for(var acc in year_accumulations) {
+      if(year_accumulations[acc][1] > most_pop_acc) {
+        most_pop_acc = year_accumulations[acc][1];
+        most_pop_year = year_accumulations[acc][0];
+      }
+    }
+
+    most_popular_year = most_pop_year;
+  }
+
+  function populateBreaks(number_of_classes, states) {
+
+    var occurrences_acc = [];
+
+    states.objects.states.geometries.forEach(function(d) {
+      for (occurrence in d.properties.occurrences) {
+        occurrences_acc.push(d.properties.occurrences[occurrence].oc);
+      }
+    });
+
+    if(occurrences_acc.length <= number_of_classes) {
+      number_of_classes = occurrences_acc.length;
+    }
+
+    var clusters = ss.ckmeans(occurrences_acc, number_of_classes);
+    var brks = clusters.map(function(cluster) {
+      return [cluster[0], cluster.pop()];
+    });
+
+    breaks = multiDimensionalUnique(brks);
+
+  }
+
+  function addLegend () {
+
+    //edit/shuffle icons source: https://material.io/icons/
+
+    // target svg...
+    // <g class="legend-linear" transform="translate(710,320)">
+    //    <rect class="legend-rect" height="140" width="180" />
+    //    <g transform="translate(5,10) scale(.75)"><path class="icon edit" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></g>
+    //    <g transform="translate(155,10) scale(.75)"><path class="icon shuffle" d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></g>
+    //    <g class="legend-text" transform="translate(90,25)">
+    //       <g><text class="legend-title">Quinn</text></g>
+    //       <g><text class="legend-subtitle" transform="translate(0,25)">430 births in 1991</text></g>
+    //       <g><text class="legend-subsubtitle" transform="translate(0,45)">3,906 births since 1956</text></g>
+    //    </g>
+    //    <g class="legend-cells" transform="translate(8,90)">
+    //       <g id="cell0" transform="translate(0,0)">
+    //          <rect class="swatch" height="15" width="30" fill="#edf8e9" />
+    //          <text class="label" transform="translate(30,30)" style="text-anchor: end;">13</text>
+    //       </g>
+    //       <g id="cell1" transform="translate(32,0)">
+    //          <rect class="swatch" height="15" width="30" fill="#bae4b3" />
+    //          <text class="label" transform="translate(30,30)" style="text-anchor: end;">25</text>
+    //       </g>
+    //       <g id="cell2" transform="translate(64,0)">
+    //          <rect class="swatch" height="15" width="30" fill="#74c476" />
+    //          <text class="label" transform="translate(30,30)" style="text-anchor: end;">44</text>
+    //       </g>
+    //       <g id="cell3" transform="translate(96,0)">
+    //          <rect class="swatch" height="15" width="30" fill="#31a354" />
+    //          <text class="label" transform="translate(30,30)" style="text-anchor: end;">73</text>
+    //       </g>
+    //       <g id="cell4" transform="translate(128,0)">
+    //          <rect class="swatch" height="15" width="30" fill="#006d2c" />
+    //          <text class="label" transform="translate(30,30)" style="text-anchor: end;">141</text>
+    //       </g>
+    //    </g>
+    // </g>
+
+    d3.select('.legend-linear').remove();
+
+    svg.append("g")
+      .attr("class", "legend-linear")
+      .attr("transform", "translate(710,290)")
+      .on("mouseover",function(d) {
+        tooltip.style("opacity", 0);//TODO, figure a better tooltip
+      });
+
+    var legend_root = d3.select('.legend-linear');
+
+    legend_root.append("rect")
+      .attr("class", "legend-rect")
+      .attr("height", 205)
+      .attr("width", 180);
+
+    //edit icon
+    legend_root.append("g")
+      .attr("transform", "translate(5,10) scale(.75)")
+        .append("path")
+          .attr("id", "icon-edit")
+          .attr("class", "icon edit")
+          .attr("d", "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z")
+          .on("click", function() {
+            document.getElementById("pop_name").focus();
+          });
+
+
+    //shuffle icon
+    legend_root.append("g")
+      .attr("transform", "translate(155,10) scale(.75)")
+        .append("path")
+          .attr("class", "icon shuffle")
+          .attr("d", "M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z")
+          .on("click", function() {
+            window.location.href = "/names/d3/";
+          });
+
+    legend_root.append("g")
+      .attr("class", "legend-text")
+      .attr("transform", "translate(90,25)")
+
+    //text
+    var legend_text = d3.select('.legend-text');
+
+    // legend_text.append("g")
+    //   .append('text')
+    //     .attr("class", "legend-title")
+    //     .text("\"" + popular_name + "\"");
+
+    legend_text.append("g")
+      .append('text')
+        .attr("class", "legend-subtitle")
+        .attr("transform", "translate(0,60)")
+        .text("");
+
+    legend_text.append("g")
+      .append('text')
+        .attr("class", "legend-subsubtitle")
+        .attr("transform", "translate(0,80)")
+        .text("");
+
+    //cells
+    legend_root.append("g")
+      .attr("class", "legend-cells")
+      .attr("transform", "translate(8, 120)")
+
+    var legend_cells = d3.select('.legend-cells');
+
+    var i = 0;
+    for(var br in breaks) {
+      legend_cells.append("g")
+        .attr("id", "cell" + i)
+        .attr("transform", "translate(" + i * 32 + ",0)")
+      i++;
+    }
+
+    i = 0;
+    for(var br in breaks) {
+      var cell = d3.select('#cell' + i);
+
+      cell.append('rect')
+          .attr('class', 'swatch')
+          .attr('height', 15)
+          .attr('width', 30)
+          .attr('fill', getColor(breaks[br][1], breaks));
+
+      cell.append('text')
+        .text(breaks[br][1])
+        .attr('class', 'label')
+        .attr('transform', 'translate(30,30)')
+        .style('text-anchor', 'end');
+
+      i++;
+    }
+  }
+
+  function getColor(d, breaks) {
+
+    var colors = d3.entries(eval('colorbrewer.' + colorbrewer_key));
+    var k = breaks.length - 3; //breaks can't be < 3
+    var color_scale = colors[k];
+    var returncolor = novaluecolor;
+
+    d = parseInt(d);
+
+    if(d == 0)
+      returncolor = novaluecolor;
+
+    if (breaks[0] && d <= breaks[0][1]) {
+      returncolor = color_scale.value[0];
+    } else if (breaks[1] && d <= breaks[1][1]) {
+      returncolor = color_scale.value[1];
+    } else if (breaks[2] && d <= breaks[2][1]) {
+      returncolor = color_scale.value[2];
+    } else if (breaks[3] && d <= breaks[3][1]) {
+      returncolor = color_scale.value[3];
+    } else if (breaks[4] && d <= breaks[4][1]) {
+      returncolor = color_scale.value[4];
+    } else if (breaks[5] && d <= breaks[5][1]) {
+      returncolor = color_scale.value[5];
+    } else if (breaks[6] && d <= breaks[6][1]) {
+      returncolor = color_scale.value[6];
+    } else if (breaks[7] && d <= breaks[7][1]) {
+      returncolor = color_scale.value[7];
+    } else if (breaks[8] && d <= breaks[8][1]) {
+      returncolor = color_scale.value[8];
+    } else if (breaks[9] && d <= breaks[9][1]) {
+      returncolor = color_scale.value[9];
+    }
+
+    return returncolor;
+
+  }
+
+  function getTooltipMessage(d) {
+    //TODO: make this pluralization better. https://english.stackexchange.com/questions/39150/pluralization-of-names
+    var tooltip_msg = "No " + popular_name + "s were born in " + abbrRegion(d.properties.stusps, 'name')  + " in " + the_year;
+    for(var oc in occurrences) {
+      if(occurrences[oc].yr == the_year && occurrences[oc].st == d.properties.stusps) {
+        tooltip_msg = occurrences[oc].oc + " " + popular_name + "s were born in " + abbrRegion(d.properties.stusps, 'name') + " in " + the_year;
+      }
+    }
+    return tooltip_msg;
+  }
+
+  function getNameFromQS() {
+    var name_query = gup('name', document.location.search);
+    if(name_query != null)
+      return name_query;
+    else {
+      return default_popular_name;
+    }
+  }
+
+  function getSexFromQS() {
+    var sex_query = gup('sex', document.location.search);
+    if(sex_query != null) {
+      return sex_query;
+    }
+    else {
+      return default_sex;
+    }
+  }
+
+  function setMaleFemaleSwitch() {
+
+    d3.selectAll("input[name='switch_mf']").each(function(){
+      if(d3.select(this).node().value == sex)
+        d3.select(this).node().checked = true;
+    });
+
+  }
+
+  function handleCustomNameInput() {
+
+    tooltip.style("opacity", 0);//TODO, figure a better tooltip
+
+    var prev_name = popular_name;//save what was there in case something bad happens.
+
+    //TODO: figure this mess out
+    //going for this...kinda works
+    //https://stackoverflow.com/questions/8548126/make-span-element-editable
+    //http://jsfiddle.net/adamb/Hbww2/
+    //make the
+    d3.select("#pop_name")
+      .html(popular_name)
+      .on("click",function(d) {
+        tooltip.style("opacity", 0);//TODO, figure a better tooltip
+        prev_name = d3.select(this)._groups[0][0].textContent;
+        d3.select(this)._groups[0][0].textContent = "";
+      })
+      .on("blur",function(d) {
+        if(d3.select(this)._groups[0][0].textContent == '') {
+          d3.select(this)._groups[0][0].textContent = prev_name;
+          d3.select(this)._groups[0][0].blur();
+          return;
+        }
+        else {
+          popular_name = d3.select(this)._groups[0][0].textContent;
+          total_occurrences_all_time = 0;
+          total_occurrences_for_year = 0;
+          sex = d3.select('input[name="switch_mf"]:checked').node().value;//why is this required?
+          init();
+        }
+      })
+      .on("keydown", function() {
+        if(d3.event.keyCode == 13) {
+          if(d3.select(this)._groups[0][0].textContent == '') {
+            d3.select(this)._groups[0][0].textContent = prev_name;
+            d3.select(this)._groups[0][0].blur();
+            return;
+          }
+          popular_name = d3.select(this)._groups[0][0].textContent;
+          total_occurrences_all_time = 0;
+          total_occurrences_for_year = 0;
+          sex = d3.select('input[name="switch_mf"]:checked').node().value;//why is this required?
+          init();
+          d3.event.preventDefault();
+        }
+      });
+  }
+</script>
+
+</body>
+</html>

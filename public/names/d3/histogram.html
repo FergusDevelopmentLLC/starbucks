@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.bar rect {
+  fill: steelblue;
+}
+
+.bar text {
+  fill: #fff;
+  font: 10px sans-serif;
+}
+
+</style>
+<svg width="960" height="500"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var data_url = '/popular_name/d/Jennifer/F';
+
+d3.queue()
+  .defer(d3.json, data_url)
+  .await(makeHist);
+
+function makeHist(error, name_data) {
+
+  //var data = d3.range(1000).map(d3.randomBates(10));
+  //https://bl.ocks.org/mbostock/3048450
+
+  var formatCount = d3.format(",.0f");
+
+  var svg = d3.select("svg"),
+      margin = {top: 10, right: 30, bottom: 30, left: 30},
+      width = +svg.attr("width") - margin.left - margin.right,
+      height = +svg.attr("height") - margin.top - margin.bottom,
+      g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x = d3.scaleLinear()
+      .rangeRound([0, width]);
+
+  var year_accumulations = [];
+  var last_yr = name_data[0].yr;
+  var year_accum = 0;
+
+  for(var oc in name_data) {
+    if(name_data[oc].yr == last_yr) {
+      year_accum += name_data[oc].oc;
+    }
+    else {
+      year_accumulations.push(parseInt(year_accum));
+      year_accum = name_data[oc].oc;
+      last_yr = name_data[oc].yr;
+    }
+  }
+
+  var max = Math.max.apply(null, year_accumulations);
+  var min = Math.min.apply(null, year_accumulations);
+
+  data = year_accumulations.map(normalize(min, max));
+
+  var bins = d3.histogram()
+      .domain(x.domain())
+      .thresholds(x.ticks(year_accumulations.length - 1))
+      (data);
+
+  var y = d3.scaleLinear()
+      .domain([0, d3.max(bins, function(d) { return d.length; })])
+      .range([height, 0]);
+
+  var bar = g.selectAll(".bar")
+    .data(bins)
+    .enter().append("g")
+      .attr("class", "bar")
+      .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; });
+
+  bar.append("rect")
+      .attr("x", 1)
+      .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
+      .attr("height", function(d) { return height - y(d.length); });
+
+  bar.append("text")
+      .attr("dy", ".75em")
+      .attr("y", 6)
+      .attr("x", (x(bins[0].x1) - x(bins[0].x0)) / 2)
+      .attr("text-anchor", "middle")
+      .text(function(d) { return formatCount(d.length); });
+
+  g.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+}
+
+function normalize(min, max) {
+    var delta = max - min;
+    return function (val) {
+        return (val - min) / delta;
+    };
+}
+
+
+
+
+
+
+</script>
