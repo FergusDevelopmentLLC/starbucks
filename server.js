@@ -30,10 +30,6 @@ app.use('/grid', grid);
 const starbucksdata = require('./routes/starbucks');
 app.use('/starbucks_data', starbucksdata);
 
-//popular_name map
-const popular_name = require('./routes/popular_name');
-app.use('/popular_name', popular_name);
-
 const state = require('./routes/state');
 app.use('/state', state);
 
@@ -62,6 +58,6 @@ app.use((req, res, next) => {
 });
 
 // Start the server
-const server = app.listen(8644, () => {
+const server = app.listen(8660, () => {
   console.log('App listening at port %s', server.address().port);
 });
